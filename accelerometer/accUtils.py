@@ -157,7 +157,7 @@ def loadTimeSeriesCSV(tsFile):
     <returns pd.DataFrame>
     """
     # get header
-    header = pd.read_csv(tsFile, nrows=1, header=0, compression='gzip')
+    header = pd.read_csv(tsFile, nrows=1, header=0, compression='infer')
     headerInfo = header.columns[0]
     if header.columns[0] == TIME_SERIES_COL:
         headerInfo = header.columns[1]
@@ -171,7 +171,7 @@ def loadTimeSeriesCSV(tsFile):
 
     # read data
     tsData = pd.read_csv(tsFile, skiprows=1, header=None, names=header.columns,
-        compression='gzip')
+        compression='infer')
     if header.columns[0] != TIME_SERIES_COL:
         tsData.index = pd.date_range(start=startDate, end=endDate,
             freq=str(sampleRate) + 's')
