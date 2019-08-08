@@ -217,7 +217,7 @@ def getCalibrationCoefs(staticBoutsFile, summary):
         tempVals = staticBoutsFile[['temperature']].values
     else:
         d = np.loadtxt(open(staticBoutsFile,"rb"),delimiter=",",skiprows=1,
-                usecols=(2,3,4,11,13))
+                usecols=(2,3,4,11,14))
         if len(d)<=5:
             return [0.0,0.0,0.0], [1.0,1.0,1.0], [0.0,0.0,0.0], 20, np.nan, np.nan, \
                 np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, len(d)

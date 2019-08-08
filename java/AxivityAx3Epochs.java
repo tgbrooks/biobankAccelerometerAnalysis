@@ -37,7 +37,7 @@ import java.time.ZoneOffset;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-
+import java.lang.Math;
 
 /**
  * Calculates epoch summaries from an AX3 .CWA file. Class/application can be
@@ -422,7 +422,7 @@ public class AxivityAx3Epochs {
 						double x = Double.parseDouble(cols[xCol]);
 						double y = Double.parseDouble(cols[yCol]);
 						double z = Double.parseDouble(cols[zCol]);
-						epochWriter.newValues(time, x, y, z, 0, new int[] {0});
+						epochWriter.newValues(time, x, y, z, 0, 0, new int[] {0});
 						if (!readTime) {
 							time += 1000/csvSampleRate;
 						}
@@ -600,8 +600,8 @@ public class AxivityAx3Epochs {
 					double x = twoSamples[3-twoSampleCounter*3];
 					double y = twoSamples[4-twoSampleCounter*3];
 					double z = twoSamples[5-twoSampleCounter*3];
-					double temp = 1.0d; // don't know temp yet
-					epochWriter.newValues(time, x, y, z, temp, errCounter);
+					double temp = 1.0d; // don't know temperature or light yet
+					epochWriter.newValues(time, x, y, z, temp, 0.0, errCounter);
 
 					samples += 1;
 
@@ -838,7 +838,8 @@ public class AxivityAx3Epochs {
 
 				// read block header items
 				long blockTimestamp = getUnsignedInt(buf, 14);
-				int light = getUnsignedShort(buf, 18);
+				int lightRaw = getUnsignedShort(buf, 18);
+                double light = Math.pow(2, (3.0 * (lightRaw / 512.0 + 1.0))); // Formula from GGIR R package
 				double temperature = (getUnsignedShort(buf, 20) * 150.0 - 20500) / 1000;
 				short rateCode = (short) (buf.get(24) & 0xff);
 				short numAxesBPS = (short) (buf.get(25) & 0xff);
@@ -998,7 +999,7 @@ public class AxivityAx3Epochs {
 					y = yRaw / 256.0;
 					z = zRaw / 256.0;
 
-					epochWriter.newValues(getEpochMillis(blockTime.plusNanos(START_OFFSET_NANOS)), x, y, z, temperature, errCounter);
+					epochWriter.newValues(getEpochMillis(blockTime.plusNanos(START_OFFSET_NANOS)), x, y, z, temperature, light, errCounter);
 
 				}
 			} catch (Exception excep) {
@@ -1070,6 +1071,7 @@ public class AxivityAx3Epochs {
 			String header;
 			LocalDateTime blockTime = LocalDateTime.of(1999, 1, 1, 1, 1, 1);
 			double temperature = 0.0;
+            double light = 0.0; // No light information known
 			double sampleFreq = 0.0;
 			String dataBlock;
 			String timeFmtStr = "yyyy-MM-dd HH:mm:ss:SSS";
@@ -1133,7 +1135,7 @@ public class AxivityAx3Epochs {
 					y = (yRaw * 100.0d - mfrOffset[1]) / mfrGain[1];
 					z = (zRaw * 100.0d - mfrOffset[2]) / mfrGain[2];
 
-					epochWriter.newValues(getEpochMillis(blockTime), x, y, z, temperature, errCounter);
+					epochWriter.newValues(getEpochMillis(blockTime), x, y, z, temperature, light, errCounter);
 
 
 					hexPosition += 12;
