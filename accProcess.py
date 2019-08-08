@@ -68,6 +68,10 @@ def main():
                             metavar='True/False', default=False, type=str2bool,
                             help="""Skip filtering stage
                              (default : %(default)s)""")
+    parser.add_argument('--modifyForDaylightSavings',
+                        metavar='True/False', default=False, type=str2bool,
+                        help="""Modify times if recording crosses a daylight savings change""")
+
     # calibration parameters
     parser.add_argument('--skipCalibration',
                             metavar='True/False', default=False, type=str2bool,

@@ -14,7 +14,8 @@ def getActivitySummary(epochFile, nonWearFile, summary,
     activityClassification=True, startTime=None, endTime=None,
     epochPeriod=30, stationaryStd=13, minNonWearDuration=60, mgMVPA=100,
     mgVPA=425, activityModel="activityModels/doherty2018.tar",
-    intensityDistribution=False, verbose=False):
+    intensityDistribution=False, verbose=False,
+    modify_for_daylight_savings_change=True):
     """Calculate overall activity summary from <epochFile> data
 
     Get overall activity summary from input <epochFile>. This is achieved by
@@ -42,6 +43,9 @@ def getActivitySummary(epochFile, nonWearFile, summary,
         of METS for each activity state
     :param bool intensityDistribution: Add intensity outputs to dict <summary>
     :param bool verbose: Print verbose output
+    :param bool modify_for_daylight_savings_change: On series that cross a daylight
+        savings change boundary, whether to modify the times by +/- 1 hour after
+        crossover
 
     :return: Pandas dataframe of activity epoch data
     :rtype: pandas.DataFrame
@@ -93,7 +97,7 @@ def getActivitySummary(epochFile, nonWearFile, summary,
     e = get_interrupts(e, epochPeriod, summary)
 
     # check if data occurs at a daylight savings crossover
-    e = check_daylight_savings_crossover(e, startTime, endTime, summary)
+    e = check_daylight_savings_crossover(e, startTime, endTime, summary, modify_times=modify_for_daylight_savings_change)
 
     # calculate wear-time statistics, and write nonWear episodes to file
     get_wear_time_stats(e, epochPeriod, stationaryStd, minNonWearDuration,
@@ -160,7 +164,7 @@ def get_interrupts(e, epochPeriod, summary):
     return e
 
 
-def check_daylight_savings_crossover(e, startTime, endTime, summary):
+def check_daylight_savings_crossover(e, startTime, endTime, summary, modify_times=True):
     """Check if data occurs at a daylight savings crossover
 
     If daylight savings crossover, update times after time-change by +/- 1hr.
@@ -185,34 +189,35 @@ def check_daylight_savings_crossover(e, startTime, endTime, summary):
     endTimeZone = localTime.localize(endTime.to_pydatetime())
     if startTimeZone.dst() != endTimeZone.dst():
         daylightSavingsCrossover = 1
-        # find whether clock needs to go forward or back
-        if endTimeZone.dst() > startTimeZone.dst():
-            offset = 1
-        else:
-            offset = -1
-        print('different timezones, offset = ', str(offset))
-        # find actual crossover time
-        for t in localTime._utc_transition_times:
-            if t>startTime:
-                transition = t
-                break
-        # if Autumn crossover time, adjust transition time plus remove 1hr chunk
-        if offset == -1:
-            # pytz stores dst crossover at 1am, but clocks change at 2am local
-            transition = transition + pd.DateOffset(hours=1)
-            # remove last hr before DST cut, which will be subsequently overwritten
-            e = e[(e.index < transition - pd.DateOffset(hours=1)) |
-                    (e.index >= transition)]
-        print('day light savings transition at:', str(transition))
-        # now update datetime index to 'fix' values after DST crossover
-        e['newTime'] = e.index
-        e['newTime'] = np.where(e.index >= transition,
-                e.index + np.timedelta64(offset,'h'), e.index)
-        e['newTime'] = np.where(e['newTime'].isnull(), e.index, e['newTime'])
-        e = e.set_index('newTime')
-        # reset startTime and endTime variables
-        startTime = pd.to_datetime(e.index.values[0])
-        endTime = pd.to_datetime(e.index.values[-1])
+        if modify_times:
+            # find whether clock needs to go forward or back
+            if endTimeZone.dst() > startTimeZone.dst():
+                offset = 1
+            else:
+                offset = -1
+            print('different timezones, offset = ', str(offset))
+            # find actual crossover time
+            for t in localTime._utc_transition_times:
+                if t>startTime:
+                    transition = t
+                    break
+            # if Autumn crossover time, adjust transition time plus remove 1hr chunk
+            if offset == -1:
+                # pytz stores dst crossover at 1am, but clocks change at 2am local
+                transition = transition + pd.DateOffset(hours=1)
+                # remove last hr before DST cut, which will be subsequently overwritten
+                e = e[(e.index < transition - pd.DateOffset(hours=1)) |
+                        (e.index >= transition)]
+            print('day light savings transition at:', str(transition))
+            # now update datetime index to 'fix' values after DST crossover
+            e['newTime'] = e.index
+            e['newTime'] = np.where(e.index >= transition,
+                    e.index + np.timedelta64(offset,'h'), e.index)
+            e['newTime'] = np.where(e['newTime'].isnull(), e.index, e['newTime'])
+            e = e.set_index('newTime')
+            # reset startTime and endTime variables
+            startTime = pd.to_datetime(e.index.values[0])
+            endTime = pd.to_datetime(e.index.values[-1])
 
     # record to output summary
     summary['quality-daylightSavingsCrossover'] = daylightSavingsCrossover
