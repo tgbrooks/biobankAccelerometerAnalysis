@@ -213,8 +213,10 @@ def check_daylight_savings_crossover(e, startTime, endTime, summary):
         # reset startTime and endTime variables
         startTime = pd.to_datetime(e.index.values[0])
         endTime = pd.to_datetime(e.index.values[-1])
-        # and record to output summary
-        summary['quality-daylightSavingsCrossover'] = daylightSavingsCrossover
+
+    # record to output summary
+    summary['quality-daylightSavingsCrossover'] = daylightSavingsCrossover
+
     return e
 
 
