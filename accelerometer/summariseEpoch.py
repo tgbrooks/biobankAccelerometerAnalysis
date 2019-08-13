@@ -439,6 +439,10 @@ def writeMovementSummaries(e, labels, summary):
         if accType in ['MVPA', 'VPA']:
             col = accType
 
+        if col not in e:
+            summary[accType] = "No data"
+            continue
+
         # overall / weekday / weekend summaries
         summary[accType + '-overall-avg'] = accUtils.formatNum(e[col].mean(), 5)
         summary[accType + '-overall-sd'] = accUtils.formatNum(e[col].std(), 2)

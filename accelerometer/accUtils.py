@@ -113,13 +113,13 @@ def generateTimeSeries(epochPD, tsFile, timeSeriesDateColumn=False,
         e['imputed'] = np.isnan(e['acc']).astype(int)
         # add activity prediction labels
         if activityClassification:
-            if 'sleepDetected' in e.columns:
+            if 'sleepDetectedImputed' in e.columns:
                 labels.append('sleepDetected')
-            if 'MET' in e.columns:
+            if 'METImputed' in e.columns:
                 labels.append('MET')
-            if 'temp' in e.columns:
+            if 'tempImputed' in e.columns:
                 labels.append('temp')
-            if 'light' in e.columns:
+            if 'lightImputed' in e.columns:
                 labels.append('light')
             out = e[['vmFinal','imputed'] + [l + 'Imputed' for l in labels]]
             out.to_csv(tsFile,
