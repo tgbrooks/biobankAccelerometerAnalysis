@@ -1,5 +1,7 @@
 ![Accelerometer data processing overview](docs/source/accelerometerLogo.png)
 
+FORK of the original software from https://github.com/activityMonitoring/biobankAccelerometerAnalysis modified for our Snakemake pipeline compabitility as well as to output light and temperature data and to modify the timestamp handling.
+
 A tool to extract meaningful health information from large accelerometer datasets. The software generates time-series and summary metrics useful for answering key questions such as how much time is spent in sleep, sedentary behaviour, or doing physical activity.
 
 
