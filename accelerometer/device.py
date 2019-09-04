@@ -11,6 +11,9 @@ from subprocess import call
 import sys
 
 
+class AccelerometerError(Exception):
+    pass
+
 def processRawFileToEpoch(rawFile, epochFile, stationaryFile, summary,
     skipCalibration=False, stationaryStd=13, xIntercept=0.0,
     yIntercept=0.0, zIntercept=0.0, xSlope=0.0, ySlope=0.0,
@@ -103,19 +106,25 @@ def processRawFileToEpoch(rawFile, epochFile, stationaryFile, summary,
             if exitCode != 0:
                 print(commandArgs)
                 print("Error: java calibration failed, exit ", exitCode)
-                sys.exit(-6)
+                print("Failed to calibrate, using defaults")
+                summary['calibration-failed'] = True
+                #sys.exit(-6)
             # record calibrated axes scale/offset/temp vals + static point stats
             getCalibrationCoefs(stationaryFile, summary)
-            xIntercept = summary['calibration-xOffset(g)']
-            yIntercept = summary['calibration-yOffset(g)']
-            zIntercept = summary['calibration-zOffset(g)']
-            xSlope = summary['calibration-xSlope(g)']
-            ySlope = summary['calibration-ySlope(g)']
-            zSlope = summary['calibration-zSlope(g)']
-            xTemp = summary['calibration-xTemp(C)']
-            yTemp = summary['calibration-yTemp(C)']
-            zTemp = summary['calibration-zTemp(C)']
-            meanTemp = summary['calibration-meanDeviceTemp(C)']
+            try:
+                xIntercept = summary['calibration-xOffset(g)']
+                yIntercept = summary['calibration-yOffset(g)']
+                zIntercept = summary['calibration-zOffset(g)']
+                xSlope = summary['calibration-xSlope(g)']
+                ySlope = summary['calibration-ySlope(g)']
+                zSlope = summary['calibration-zSlope(g)']
+                xTemp = summary['calibration-xTemp(C)']
+                yTemp = summary['calibration-yTemp(C)']
+                zTemp = summary['calibration-zTemp(C)']
+                meanTemp = summary['calibration-meanDeviceTemp(C)']
+            except KeyError:
+                print("Failed to calibrate, using defaults")
+                summary['calibration-failed'] = True
         else:
             storeCalibrationParams(summary, xIntercept, yIntercept, zIntercept,
                     xSlope, ySlope, zSlope, xTemp, yTemp, zTemp, meanTemp)
@@ -163,7 +172,7 @@ def processRawFileToEpoch(rawFile, epochFile, stationaryFile, summary,
         if exitCode != 0:
             print(commandArgs)
             print("Error: java epoch generation failed, exit ", exitCode)
-            sys.exit(-7)
+            raise AccelerometerError(f"Error: java epoch generation failed with exit code {exitCode}")
 
     else:
         if not skipCalibration:

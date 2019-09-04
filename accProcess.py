@@ -256,21 +256,34 @@ def main():
     # now process the .CWA file
     if args.processRawFile:
         summary['file-name'] = args.rawFile
-        accelerometer.device.processRawFileToEpoch(args.rawFile, args.epochFile,
-            args.stationaryFile, summary, skipCalibration=args.skipCalibration,
-            stationaryStd=args.stationaryStd, xIntercept=args.calOffset[0],
-            yIntercept=args.calOffset[1], zIntercept=args.calOffset[2],
-            xSlope=args.calSlope[0], ySlope=args.calSlope[1],
-            zSlope=args.calSlope[2], xTemp=args.calTemp[0],
-            yTemp=args.calTemp[1], zTemp=args.calTemp[2],
-            meanTemp=args.meanTemp, rawDataParser=args.rawDataParser,
-            javaHeapSpace=args.javaHeapSpace, skipFiltering=args.skipFiltering,
-            sampleRate=args.sampleRate, epochPeriod=args.epochPeriod,
-            useAbs=args.useAbs, activityClassification=args.activityClassification,
-            rawOutput=args.rawOutput, rawOutputFile=args.rawOutputFile,
-            npyOutput=args.npyOutput, npyOutputFile=args.npyOutputFile,
-            fftOutput=args.fftOutput, startTime=args.startTime,
-            endTime=args.endTime, verbose=args.verbose)
+        try:
+            accelerometer.device.processRawFileToEpoch(args.rawFile, args.epochFile,
+                args.stationaryFile, summary, skipCalibration=args.skipCalibration,
+                stationaryStd=args.stationaryStd, xIntercept=args.calOffset[0],
+                yIntercept=args.calOffset[1], zIntercept=args.calOffset[2],
+                xSlope=args.calSlope[0], ySlope=args.calSlope[1],
+                zSlope=args.calSlope[2], xTemp=args.calTemp[0],
+                yTemp=args.calTemp[1], zTemp=args.calTemp[2],
+                meanTemp=args.meanTemp, rawDataParser=args.rawDataParser,
+                javaHeapSpace=args.javaHeapSpace, skipFiltering=args.skipFiltering,
+                sampleRate=args.sampleRate, epochPeriod=args.epochPeriod,
+                useAbs=args.useAbs, activityClassification=args.activityClassification,
+                rawOutput=args.rawOutput, rawOutputFile=args.rawOutputFile,
+                npyOutput=args.npyOutput, npyOutputFile=args.npyOutputFile,
+                fftOutput=args.fftOutput, startTime=args.startTime,
+                endTime=args.endTime, verbose=args.verbose)
+        except accelerometer.device.AccelerometerError:
+            # Make empty output files
+            import pathlib
+            pathlib.path(args.epochFile).touch()
+            pathlib.path(args.nonWearFile).touch()
+
+            # And actual summary file, which will indicate the failure
+            f = open(args.summaryFile,'w')
+            json.dump(summary, f, indent=4)
+            f.close()
+            accelerometer.accUtils.toScreen('Summary file written to: ' + args.summaryFile)
+            return
     else:
         summary['file-name'] = args.epochFile
 
