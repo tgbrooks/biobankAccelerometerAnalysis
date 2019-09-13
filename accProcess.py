@@ -295,7 +295,8 @@ def main():
         stationaryStd=args.stationaryStd, mgMVPA=args.mgMVPA,
         mgVPA=args.mgVPA, activityModel=args.activityModel,
         intensityDistribution=args.intensityDistribution,
-        verbose=args.verbose)
+        verbose=args.verbose,
+        modify_for_daylight_savings_change=args.modifyForDaylightSavings)
 
     # generate time series file (note: this will also resample to epochData so do this last)
     accelerometer.accUtils.generateTimeSeries(epochData, args.tsFile,
